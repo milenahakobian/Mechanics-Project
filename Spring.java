@@ -72,4 +72,14 @@ public class Spring {
 
         return coords;
     }
+    
+    public Spring inSeries(Spring that) {
+        double k = this.k + that.k;
+        return new Spring(k);
+    }
+
+    public Spring inParallel(Spring that) {
+        double k = 1 / (1 / this.k + 1 / that.k);
+        return new Spring(k);
+    }
 }
