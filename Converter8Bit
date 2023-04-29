@@ -1,0 +1,56 @@
+public class Converter8Bit extends Converter {
+    
+    private Spring[] springs;
+    private static final int NUM_BITS = 8;
+    private static final int SPRING_PER_BIT = 4;
+    private static final double MASS_PER_SPRING = 0.01;
+    
+    public Converter8Bit() {
+        springs = new Spring[NUM_BITS * SPRING_PER_BIT];
+        int idx = 0;
+        for (int i = 0; i < NUM_BITS; i++) {
+            for (int j = 0; j < SPRING_PER_BIT; j++) {
+                springs[idx] = new Spring();
+                idx++;
+            }
+        }
+    }
+    
+    public SystemOfSprings convert(String bitString) {
+        if (bitString.length() != NUM_BITS) {
+            throw new IllegalArgumentException("Input string must contain exactly 8 bits");
+        }
+        
+        SystemOfSprings system = new SystemOfSprings();
+        for (int i = 0; i < NUM_BITS; i++) {
+            char bit = bitString.charAt(i);
+            int springIdx = i * SPRING_PER_BIT;
+            if (bit == '0') {
+                for (int j = 0; j < SPRING_PER_BIT; j++) {
+                    system.addSpring(springs[springIdx + j]);
+                }
+            } else if (bit == '1') {
+                system.addSpring(new SpringInSeries(springs[springIdx], new SpringInParallel(springs[springIdx + 1], new SpringInParallel(springs[springIdx + 2], springs[springIdx + 3]))));
+            } else {
+                throw new IllegalArgumentException("Input string must contain only '0' or '1'");
+            }
+        }
+        return system;
+    }
+    
+    public double convertToDecimal(String bitString) {
+        SystemOfSprings system = convert(bitString);
+        Body body = new Body(1.0);
+        body.connectToSprings(system.getSprings(), MASS_PER_SPRING);
+        double[] freqAmps = computeFrequencyAmplitudes(system, body, 1.0, 0.01);
+        return calculateDecimalValue(freqAmps);
+    }
+    
+    private double calculateDecimalValue(double[] freqAmps) {
+        double decimalValue = 0.0;
+        for (int i = 0; i < freqAmps.length; i++) {
+            decimalValue += freqAmps[i] * Math.pow(2, i);
+        }
+        return decimalValue;
+    }
+}
