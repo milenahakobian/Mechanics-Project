@@ -5,6 +5,8 @@ import java.util.Random;
 public class BilliardSimulation {
     public static void main(String[] args) {
         simulateBilliard(5, 0.001); // Run the simulation for 5 reflections with a deviation threshold of 0.001
+        simulateBilliard(7, 0.001);
+        simulateBilliard(10, 0.001);
     }
 
     public static void simulateBilliard(int numReflections, double deviationThreshold) {
