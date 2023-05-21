@@ -4,9 +4,9 @@ import java.util.Random;
 
 public class BilliardSimulation {
     public static void main(String[] args) {
-        simulateBilliard(5, 0.001); // Run the simulation for 5 reflections with a deviation threshold of 0.001
-        simulateBilliard(7, 0.001);
-        simulateBilliard(10, 0.001);
+        simulateBilliard(5, 0.001); // simulation for 5 reflections with a deviation threshold delta = 0.001
+        simulateBilliard(5, 0.001); // simulation for 4 reflections with a deviation threshold delta = 0.001
+        simulateBilliard(10, 0.001); // simulation for 10 reflections with a deviation threshold delta = 0.001
     }
 
     public static void simulateBilliard(int numReflections, double deviationThreshold) {
@@ -17,10 +17,13 @@ public class BilliardSimulation {
         // Generate initial position and momentum
         double x = random.nextDouble() * 2 - 1;
         double y = random.nextDouble() * 2 - 1;
-        double px = random.nextDouble() * 2 - 1;
-        double py = Math.sqrt(1 - px * px);
-        if (Math.abs(px) > 1)
+        double px, py;
+
+        do {
+            px = random.nextDouble() * 2 - 1;
             py = random.nextDouble() * 2 - 1;
+        } while (px * px + py * py > 1);
+
         double norm = Math.sqrt(px * px + py * py);
         px /= norm;
         py /= norm;
@@ -73,34 +76,39 @@ public class BilliardSimulation {
     }
 
     public static double[] calculateReflectionPoint(double x, double y, double px, double py) {
-        double slope = py / px;
-        double xReflection = (px > 0) ? Math.sqrt(1 - y * y) : -Math.sqrt(1 - y * y);
-        double yReflection = slope * (xReflection - x) + y;
-        return new double[]{xReflection, yReflection};
-    }
+    double slope = py / px;
+    double xReflection = (y * y - x * x) / (x * x + y * y);
+    double yReflection = slope * xReflection;
+    return new double[]{xReflection, yReflection};
+}
 
-    public static List<double[]> calculateStraightPath(double[] startingPoint, double[] momentum, int numReflections) {
-        List<double[]> straightPath = new ArrayList<>();
-        double x = startingPoint[0];
-        double y = startingPoint[1];
+
+    public static List<double[]> calculateStraightPath(double[] startPoint, double[] momentum, int numReflections) {
+        List<double[]> path = new ArrayList<>();
+        path.add(startPoint);
+
+        double x = startPoint[0];
+        double y = startPoint[1];
         double px = momentum[0];
         double py = momentum[1];
 
-        straightPath.add(new double[]{x, y});
-
         for (int i = 0; i < numReflections; i++) {
-            x += px;
-            y += py;
-            straightPath.add(new double[]{x, y});
+            double[] reflection = calculateReflectionPoint(x, y, px, py);
+            path.add(reflection);
+
+            x = reflection[0];
+            y = reflection[1];
         }
 
-        return straightPath;
+        return path;
     }
 
     public static double calculateDeviation(List<double[]> path1, List<double[]> path2) {
         double deviation = 0.0;
 
-        for (int i = 0; i < path1.size(); i++) {
+        int minLength = Math.min(path1.size(), path2.size());
+
+        for (int i = 0; i < minLength; i++) {
             double[] point1 = path1.get(i);
             double[] point2 = path2.get(i);
 
@@ -110,6 +118,6 @@ public class BilliardSimulation {
             deviation += Math.sqrt(dx * dx + dy * dy);
         }
 
-        return deviation;
+        return deviation / minLength;
     }
 }
