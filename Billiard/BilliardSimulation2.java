@@ -4,24 +4,21 @@ import java.util.Random;
 
 public class BilliardSimulation2 {
     public static void main(String[] args) {
-        simulateBilliard(5, 0.001); // Run the simulation for 5 reflections with a deviation threshold of 0.001
+        simulateVerticalCircularBilliard(5, 0.001); // Run the simulation for 5 reflections with a deviation threshold of 0.001
+        simulateVerticalCircularBilliard(4, 0.001);
+        simulateVerticalCircularBilliard(7, 0.001);
     }
 
-    public static void simulateBilliard(int numReflections, double deviationThreshold) {
+    public static void simulateVerticalCircularBilliard(int numReflections, double deviationThreshold) {
         Random random = new Random();
 
         List<double[]> reflectionPoints = new ArrayList<>();
 
         // Generate initial position and momentum
-        double x = random.nextDouble() * 2 - 1;
-        double y = random.nextDouble() * 2 - 1;
-        double px = random.nextDouble() * 6 + 5;
-        double py = Math.sqrt(1 - px * px);
-        if (Math.abs(px) > 1)
-            py = random.nextDouble() * 2 - 1;
-        double norm = Math.sqrt(px * px + py * py);
-        px /= norm;
-        py /= norm;
+        double x = random.nextDouble() * 2 - 1; // Random x value between -1 and 1
+        double y = Math.sqrt(1 - x * x); // Calculate y value on the unit circle
+        double px = random.nextDouble() * 6 + 5; // Random momentum between 5 and 10
+        double py = 0; // Since the motion is in a vertical circle, py is initially 0
 
         double[] initialPosition = {x, y};
         double[] initialMomentum = {px, py};
@@ -70,56 +67,41 @@ public class BilliardSimulation2 {
         }
     }
 
-    public static double[] calculateReflectionPoint(double x, double y, double px, double py) {
+        public static double[] calculateReflectionPoint(double x, double y, double px, double py) {
         double slope = py / px;
-        double xReflection = (px > 0) ? Math.sqrt(1 - y * y) : -Math.sqrt(1 - y * y);
-        double yReflection = slope * (xReflection - x) + y;
+        double xReflection = (Math.pow(y, 2) - Math.pow(x, 2)) * x - 2 * x * y * slope;
+        double yReflection = -2 * x * y * x + (Math.pow(x, 2) - Math.pow(y, 2)) * y;
         return new double[]{xReflection, yReflection};
     }
 
-    public static List<double[]> calculateStraightPath(double[] startingPoint, double[] momentum, int numReflections) {
+    public static List<double[]> calculateStraightPath(double[] lastReflection, double[] momentum, int numReflections) {
         List<double[]> straightPath = new ArrayList<>();
-        double x = startingPoint[0];
-        double y = startingPoint[1];
+        double x = lastReflection[0];
+        double y = lastReflection[1];
         double px = momentum[0];
         double py = momentum[1];
 
-        straightPath.add(new double[]{x, y});
+        straightPath.add(lastReflection);
 
         for (int i = 0; i < numReflections; i++) {
-            double[] nextPoint = calculateNextPoint(x, y, px, py);
-            x = nextPoint[0];
-            y = nextPoint[1];
-            straightPath.add(new double[]{x, y});
+            double[] reflection = calculateReflectionPoint(x, y, px, py);
+            straightPath.add(reflection);
+            x = reflection[0];
+            y = reflection[1];
         }
 
         return straightPath;
     }
 
-    public static double[] calculateNextPoint(double x, double y, double px, double py) {
-        double dt = 0.001; // Time step size
-        double g = 10; // Gravitational acceleration
-        double newX = x + px * dt;
-        double newY = y + py * dt;
-        double newPX = px;
-        double newPY = py - g * dt;
-
-        return new double[]{newX, newY, newPX, newPY};
-    }
-
-    public static double calculateDeviation(List<double[]> path1, List<double[]> path2) {
-        double deviation = 0.0;
-
-        for (int i = 0; i < path1.size(); i++) {
-            double[] point1 = path1.get(i);
-            double[] point2 = path2.get(i);
-
-            double dx = point1[0] - point2[0];
-            double dy = point1[1] - point2[1];
-
+    public static double calculateDeviation(List<double[]> reflectionPoints, List<double[]> straightPath) {
+        double deviation = 0;
+        for (int i = 0; i < reflectionPoints.size(); i++) {
+            double[] reflection = reflectionPoints.get(i);
+            double[] straightPoint = straightPath.get(i);
+            double dx = reflection[0] - straightPoint[0];
+            double dy = reflection[1] - straightPoint[1];
             deviation += Math.sqrt(dx * dx + dy * dy);
         }
-
         return deviation;
     }
 }
